@@ -1,0 +1,266 @@
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
+
+const API = import.meta.env.VITE_API_URL
+const C = {
+  primary: '#FF5A1F', bg: '#F5F5F0',
+  white: '#FFFFFF', text: '#1C1C14',
+  muted: '#6B6B60', border: '#E8E8E0'
+}
+
+export default function CartPage({ user }) {
+  const navigate = useNavigate()
+  const [cartItems, setCartItems] = useState([])
+  const [vendorId, setVendorId] = useState(null)
+  const [address, setAddress] = useState('')
+  const [note, setNote] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const token = localStorage.getItem('tokri_token')
+  const headers = { Authorization: `Bearer ${token}` }
+
+  useEffect(() => {
+    const saved = localStorage.getItem('tokri_cart')
+    const savedVendor = localStorage.getItem('tokri_vendor_id')
+    if (saved) setCartItems(JSON.parse(saved))
+    if (savedVendor) setVendorId(savedVendor)
+
+    const savedUser = localStorage.getItem('tokri_user')
+    if (savedUser) {
+      const u = JSON.parse(savedUser)
+      if (u.address) setAddress(u.address)
+    }
+  }, [])
+
+  const subtotal = cartItems.reduce((sum, i) => sum + (i.price * i.qty), 0)
+  const deliveryFee = 8
+  const total = subtotal + deliveryFee
+
+  function updateQty(productId, change) {
+    setCartItems(prev => {
+      const updated = prev.map(item =>
+        item.id === productId
+          ? { ...item, qty: item.qty + change }
+          : item
+      ).filter(item => item.qty > 0)
+      localStorage.setItem('tokri_cart', JSON.stringify(updated))
+      return updated
+    })
+  }
+
+  async function placeOrder() {
+    if (!address.trim()) {
+      setError('Please enter your delivery address')
+      return
+    }
+    if (cartItems.length === 0) {
+      setError('Your cart is empty')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const res = await axios.post(`${API}/orders`, {
+        vendor_id: vendorId,
+        items: cartItems.map(i => ({
+          product_id: i.id,
+          qty: i.qty
+        })),
+        delivery_address: address,
+        payment_method: 'cod',
+        customer_note: note
+      }, { headers })
+
+      localStorage.removeItem('tokri_cart')
+      localStorage.removeItem('tokri_vendor_id')
+      navigate('/orders')
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to place order')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: C.bg, paddingBottom: 100 }}>
+
+      {/* Header */}
+      <div style={{ background: C.primary, padding: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={() => navigate(-1)} style={{
+            background: 'rgba(255,255,255,0.2)', border: 'none',
+            borderRadius: 8, padding: '6px 10px',
+            color: 'white', fontSize: 16
+          }}>←</button>
+          <div style={{ fontSize: 18, fontWeight: 800, color: 'white' }}>
+            Your Cart
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding: '16px' }}>
+
+        {/* Cart Items */}
+        {cartItems.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 60 }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>🛒</div>
+            <div style={{ color: C.muted, fontSize: 16 }}>Your cart is empty</div>
+            <button onClick={() => navigate('/')} style={{
+              marginTop: 20, background: C.primary,
+              border: 'none', borderRadius: 10,
+              padding: '12px 24px', color: 'white',
+              fontSize: 14, fontWeight: 700
+            }}>Browse Stores</button>
+          </div>
+        ) : (
+          <>
+            {cartItems.map(item => (
+              <div key={item.id} style={{
+                background: C.white, borderRadius: 12,
+                padding: '12px 14px', marginBottom: 8,
+                display: 'flex', alignItems: 'center', gap: 12
+              }}>
+                <div style={{ fontSize: 28 }}>{item.emoji || '📦'}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>
+                    {item.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: C.muted }}>{item.unit}</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: C.primary }}>
+                    ₹{(item.price * item.qty).toFixed(2)}
+                  </div>
+                </div>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  background: '#FFF0EA', borderRadius: 8, padding: '4px 8px'
+                }}>
+                  <button onClick={() => updateQty(item.id, -1)} style={{
+                    width: 24, height: 24, borderRadius: 6,
+                    border: 'none', background: C.primary,
+                    color: 'white', fontSize: 16, fontWeight: 700
+                  }}>−</button>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: C.primary, minWidth: 20, textAlign: 'center' }}>
+                    {item.qty}
+                  </span>
+                  <button onClick={() => updateQty(item.id, 1)} style={{
+                    width: 24, height: 24, borderRadius: 6,
+                    border: 'none', background: C.primary,
+                    color: 'white', fontSize: 16, fontWeight: 700
+                  }}>+</button>
+                </div>
+              </div>
+            ))}
+
+            {/* Delivery Address */}
+            <div style={{
+              background: C.white, borderRadius: 12,
+              padding: '14px', marginTop: 16, marginBottom: 8
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 8 }}>
+                Delivery Address
+              </div>
+              <textarea
+                value={address}
+                onChange={e => setAddress(e.target.value)}
+                placeholder="Enter your full delivery address..."
+                rows={3}
+                style={{
+                  width: '100%', border: `1.5px solid ${C.border}`,
+                  borderRadius: 8, padding: '10px 12px',
+                  fontSize: 13, color: C.text, resize: 'none',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
+
+            {/* Note */}
+            <div style={{
+              background: C.white, borderRadius: 12,
+              padding: '14px', marginBottom: 16
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 8 }}>
+                Note for vendor (optional)
+              </div>
+              <input
+                value={note}
+                onChange={e => setNote(e.target.value)}
+                placeholder="e.g. Please deliver before 7pm"
+                style={{
+                  width: '100%', border: `1.5px solid ${C.border}`,
+                  borderRadius: 8, padding: '10px 12px',
+                  fontSize: 13, color: C.text
+                }}
+              />
+            </div>
+
+            {/* Bill Summary */}
+            <div style={{
+              background: C.white, borderRadius: 12,
+              padding: '14px', marginBottom: 16
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 10 }}>
+                Bill Summary
+              </div>
+              {[
+                { label: 'Subtotal', value: `₹${subtotal.toFixed(2)}` },
+                { label: 'Delivery fee', value: `₹${deliveryFee}` },
+              ].map(row => (
+                <div key={row.label} style={{
+                  display: 'flex', justifyContent: 'space-between',
+                  fontSize: 13, color: C.muted, marginBottom: 6
+                }}>
+                  <span>{row.label}</span>
+                  <span>{row.value}</span>
+                </div>
+              ))}
+              <div style={{
+                display: 'flex', justifyContent: 'space-between',
+                fontSize: 15, fontWeight: 800, color: C.text,
+                borderTop: `1px solid ${C.border}`, paddingTop: 8, marginTop: 4
+              }}>
+                <span>Total</span>
+                <span>₹{total.toFixed(2)}</span>
+              </div>
+              <div style={{
+                marginTop: 8, fontSize: 11, color: C.muted,
+                textAlign: 'center'
+              }}>
+                Payment: Cash on Delivery
+              </div>
+            </div>
+
+            {error && (
+              <div style={{ color: '#EF4444', fontSize: 12, marginBottom: 10, textAlign: 'center' }}>
+                {error}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Place Order Button */}
+      {cartItems.length > 0 && (
+        <div style={{
+          position: 'fixed', bottom: 0, left: '50%',
+          transform: 'translateX(-50%)',
+          width: '100%', maxWidth: 480, padding: '12px 16px',
+          background: C.bg
+        }}>
+          <button onClick={placeOrder} disabled={loading} style={{
+            width: '100%', background: C.primary,
+            border: 'none', borderRadius: 12,
+            padding: '16px', color: 'white',
+            fontSize: 16, fontWeight: 800,
+            opacity: loading ? 0.6 : 1
+          }}>
+            {loading ? 'Placing order...' : `Place Order · ₹${total.toFixed(2)}`}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
