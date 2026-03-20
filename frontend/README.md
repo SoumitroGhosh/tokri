@@ -1,16 +1,86 @@
-# React + Vite
+# 🧺 Tokri — Local Grocery Delivery
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> Apni dukaan, ghar tak — Your neighbourhood kirana store, delivered.
 
-Currently, two official plugins are available:
+Hyperlocal grocery marketplace connecting customers with local kirana stores in Pimpri-Chinchwad, Pune. Built as a learning project with the help of Claude AI.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## 🌐 Live
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| | URL |
+|---|---|
+| App | https://tokri.vercel.app |
+| API | https://tokri-production.up.railway.app/health |
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 📱 What it does
+
+**Customers** — browse nearby stores → add to cart → place COD order → track delivery live
+
+**Vendors** — open/close shop → accept orders → manage products → track earnings
+
+---
+
+## 🛠️ Stack
+
+```
+Frontend   React.js + Vite → Vercel
+Backend    Node.js + Express → Railway
+Database   Supabase (PostgreSQL)
+Auth       Phone OTP + JWT
+```
+
+---
+
+## 📁 Structure
+
+```
+tokri/
+├── backend/
+│   ├── src/routes/     auth, vendors, products, orders, user
+│   ├── src/middleware/ JWT auth
+│   ├── src/lib/        Supabase client
+│   └── server.js
+└── frontend/
+    └── src/pages/      Login, Home, Store, Cart, Orders,
+                        Profile, VendorDashboard, VendorOrders,
+                        VendorProducts
+```
+
+---
+
+## 🚀 Run locally
+
+```bash
+# Backend
+cd backend && npm install
+cp .env.example .env   # fill in your keys
+node server.js         # runs on :3000
+
+# Frontend
+cd frontend && npm install
+echo "VITE_API_URL=http://localhost:3000/api" > .env
+npm run dev            # runs on :5173
+```
+
+---
+
+## 🗺️ Roadmap
+
+- [x] Phase 1 — PWA, COD orders, vendor dashboard, deployed live
+- [ ] Phase 2 — Razorpay, WhatsApp notifications, AI dish search
+- [ ] Phase 3 — React Native apps on Play Store
+- [ ] Phase 4 — Delivery app, ONDC, B2B
+
+---
+
+## 👨‍💻 About
+
+Built by **Soumitro Ghosh** — Economics + MBA AI/ML student, Pune.
+Developed with assistance from **Claude AI** (Anthropic) as a real-world learning project.
+
+---
+
+*Built for Pimpri-Chinchwad's kirana stores* 🧺
