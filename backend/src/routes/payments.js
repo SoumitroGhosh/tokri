@@ -10,6 +10,9 @@ const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET
 });
+console.log('Razorpay config:', {
+  key_id: process.env.RAZORPAY_KEY_ID?.substring(0, 15),
+  hasSecret: !!process.env.RAZORPAY_KEY_SECRET
 
 // POST /api/payments/create-order
 router.post('/create-order', authenticate, async (req, res) => {
