@@ -19,7 +19,7 @@ async function sendOTP(phone, otp) {
   );
   await twilio.messages.create({
     body: `Your Tokri OTP is: ${otp}. Valid for 10 minutes.`,
-    from: process.env.TWILIO_PHONE,
+    from: process.env.TWILIO_PHONE_NUMBER,
     to: phone
   });
 }
