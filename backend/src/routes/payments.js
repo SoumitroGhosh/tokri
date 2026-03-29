@@ -10,9 +10,11 @@ const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET
 });
+
 console.log('Razorpay config:', {
   key_id: process.env.RAZORPAY_KEY_ID?.substring(0, 15),
   hasSecret: !!process.env.RAZORPAY_KEY_SECRET
+});
 
 // POST /api/payments/create-order
 router.post('/create-order', authenticate, async (req, res) => {
@@ -20,7 +22,7 @@ router.post('/create-order', authenticate, async (req, res) => {
     const { order_id, amount } = req.body;
 
     const options = {
-      amount: Math.round(amount * 100), // paise
+      amount: Math.round(amount * 100),
       currency: 'INR',
       receipt: `tokri_${order_id}`,
     };
