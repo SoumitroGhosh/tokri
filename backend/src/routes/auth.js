@@ -13,6 +13,11 @@ async function sendOTP(phone, otp) {
     console.log(`\n📱 OTP for ${phone}: ${otp}\n`);
     return;
   }
+  console.log('Twilio config:', {
+    sid: process.env.TWILIO_ACCOUNT_SID?.substring(0, 10),
+    hasToken: !!process.env.TWILIO_AUTH_TOKEN,
+    from: process.env.TWILIO_PHONE_NUMBER
+  });
   const twilio = require('twilio')(
     process.env.TWILIO_ACCOUNT_SID,
     process.env.TWILIO_AUTH_TOKEN
