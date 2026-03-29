@@ -16,6 +16,7 @@ export default function CartPage({ user }) {
   const [address, setAddress] = useState('')
   const [note, setNote] = useState('')
   const [loading, setLoading] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState('upi')
   const [error, setError] = useState('')
 
   const token = localStorage.getItem('tokri_token')
@@ -32,6 +33,12 @@ export default function CartPage({ user }) {
       const u = JSON.parse(savedUser)
       if (u.address) setAddress(u.address)
     }
+
+    // Load Razorpay script
+    const script = document.createElement('script')
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.async = true
+    document.body.appendChild(script)
   }, [])
 
   const subtotal = cartItems.reduce((sum, i) => sum + (i.price * i.qty), 0)
@@ -64,23 +71,76 @@ export default function CartPage({ user }) {
     setError('')
 
     try {
-      const res = await axios.post(`${API}/orders`, {
+      // Step 1 — Create order in Tokri database
+      const orderRes = await axios.post(`${API}/orders`, {
         vendor_id: vendorId,
         items: cartItems.map(i => ({
           product_id: i.id,
           qty: i.qty
         })),
         delivery_address: address,
-        payment_method: 'cod',
+        payment_method: paymentMethod,
         customer_note: note
       }, { headers })
 
-      localStorage.removeItem('tokri_cart')
-      localStorage.removeItem('tokri_vendor_id')
-      navigate('/orders')
+      const orderId = orderRes.data.order?.id
+
+      if (paymentMethod === 'cod') {
+        // Cash on delivery — go straight to orders
+        localStorage.removeItem('tokri_cart')
+        localStorage.removeItem('tokri_vendor_id')
+        navigate('/orders')
+        return
+      }
+
+      // Step 2 — Create Razorpay payment order
+      const payRes = await axios.post(`${API}/payments/create-order`, {
+        order_id: orderId,
+        amount: total
+      }, { headers })
+
+      const { razorpay_order_id, amount, currency, key_id } = payRes.data
+
+      // Step 3 — Open Razorpay checkout popup
+      const options = {
+        key: key_id,
+        amount,
+        currency,
+        name: 'Tokri 🧺',
+        description: 'Grocery Order Payment',
+        order_id: razorpay_order_id,
+        handler: async function (response) {
+          // Step 4 — Verify payment on backend
+          await axios.post(`${API}/payments/verify`, {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            order_id: orderId
+          }, { headers })
+
+          localStorage.removeItem('tokri_cart')
+          localStorage.removeItem('tokri_vendor_id')
+          navigate('/orders')
+        },
+        prefill: {
+          contact: user?.phone || ''
+        },
+        theme: {
+          color: '#FF5A1F'
+        },
+        modal: {
+          ondismiss: function () {
+            setLoading(false)
+            setError('Payment cancelled. Try again.')
+          }
+        }
+      }
+
+      const rzp = new window.Razorpay(options)
+      rzp.open()
+
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to place order')
-    } finally {
       setLoading(false)
     }
   }
@@ -111,7 +171,7 @@ export default function CartPage({ user }) {
             <div style={{ color: C.muted, fontSize: 16 }}>Your cart is empty</div>
             <button onClick={() => navigate('/')} style={{
               marginTop: 20, background: C.primary,
-              border: 'none', borderRadius: 10,
+              border: 'none', borderRadius: 12,
               padding: '12px 24px', color: 'white',
               fontSize: 14, fontWeight: 700
             }}>Browse Stores</button>
@@ -197,6 +257,34 @@ export default function CartPage({ user }) {
               />
             </div>
 
+            {/* Payment Method */}
+            <div style={{
+              background: C.white, borderRadius: 12,
+              padding: '14px', marginBottom: 16
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 10 }}>
+                Payment Method
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {[
+                  { id: 'upi', label: '💳 UPI / Card', desc: 'Pay online' },
+                  { id: 'cod', label: '💵 Cash', desc: 'Pay on delivery' }
+                ].map(method => (
+                  <button key={method.id} onClick={() => setPaymentMethod(method.id)} style={{
+                    flex: 1, padding: '10px 8px', borderRadius: 10,
+                    border: `2px solid ${paymentMethod === method.id ? C.primary : C.border}`,
+                    background: paymentMethod === method.id ? '#FFF0EA' : C.white,
+                    cursor: 'pointer', textAlign: 'center'
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>
+                      {method.label}
+                    </div>
+                    <div style={{ fontSize: 11, color: C.muted }}>{method.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Bill Summary */}
             <div style={{
               background: C.white, borderRadius: 12,
@@ -229,7 +317,7 @@ export default function CartPage({ user }) {
                 marginTop: 8, fontSize: 11, color: C.muted,
                 textAlign: 'center'
               }}>
-                Payment: Cash on Delivery
+                {paymentMethod === 'upi' ? '💳 Paying via UPI / Card' : '💵 Cash on Delivery'}
               </div>
             </div>
 
@@ -257,7 +345,10 @@ export default function CartPage({ user }) {
             fontSize: 16, fontWeight: 800,
             opacity: loading ? 0.6 : 1
           }}>
-            {loading ? 'Placing order...' : `Place Order · ₹${total.toFixed(2)}`}
+            {loading ? 'Processing...' : paymentMethod === 'upi'
+              ? `Pay ₹${total.toFixed(2)} via UPI`
+              : `Place Order · ₹${total.toFixed(2)}`
+            }
           </button>
         </div>
       )}
