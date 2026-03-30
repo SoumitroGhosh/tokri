@@ -11,9 +11,11 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
-console.log('Razorpay config:', {
-  key_id: process.env.RAZORPAY_KEY_ID?.substring(0, 15),
-  hasSecret: !!process.env.RAZORPAY_KEY_SECRET
+console.log('KEY CHECK:', {
+  key_id_full: process.env.RAZORPAY_KEY_ID,
+  key_id_length: process.env.RAZORPAY_KEY_ID?.length,
+  secret_length: process.env.RAZORPAY_KEY_SECRET?.length,
+  secret_first5: process.env.RAZORPAY_KEY_SECRET?.substring(0, 5)
 });
 
 // POST /api/payments/create-order
