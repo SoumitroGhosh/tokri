@@ -1,3 +1,0 @@
-AC8abe891d1eeeb96cf4a750c1417c1942 -  Acc SID
-c4f304c18a9cfc985cab42b24e6180d7   -  Auth Token
-+12603703190                       - my twilio phone num
