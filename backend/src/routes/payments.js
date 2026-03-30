@@ -16,7 +16,13 @@ console.log('KEY CHECK:', {
   key_id_length: process.env.RAZORPAY_KEY_ID?.length,
   secret_length: process.env.RAZORPAY_KEY_SECRET?.length,
   secret_first5: process.env.RAZORPAY_KEY_SECRET?.substring(0, 5)
-});
+});const options = {
+  amount: Math.round(amount * 100),
+  currency: 'INR',
+  receipt: `tok_${order_id.substring(0, 35)}`,
+};
+
+const razorpayOrder = await razorpay.orders.create(options);
 
 // POST /api/payments/create-order
 router.post('/create-order', authenticate, async (req, res) => {
