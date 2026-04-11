@@ -42,13 +42,14 @@ export default function VendorOrders({ user }) {
     try {
       await axios.patch(`${API}/orders/${orderId}/accept`, {}, { headers })
       fetchOrders()
+      setFilter('accepted')
     } catch (err) {
       console.error('Failed to accept order:', err)
     } finally {
       setActing(null)
     }
   }
-
+  
   async function rejectOrder(orderId) {
     setActing(orderId)
     try {
