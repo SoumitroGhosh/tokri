@@ -42,7 +42,7 @@ export default function VendorOrders({ user }) {
     try {
       await axios.patch(`${API}/orders/${orderId}/accept`, {}, { headers })
       fetchOrders()
-      setFilter('accepted')
+      setFilter('confirmed')
     } catch (err) {
       console.error('Failed to accept order:', err)
     } finally {
@@ -56,6 +56,7 @@ export default function VendorOrders({ user }) {
       await axios.patch(`${API}/orders/${orderId}/reject`,
         { reason: 'Vendor unavailable' }, { headers })
       fetchOrders()
+      setFilter('rejected')
     } catch (err) {
       console.error('Failed to reject order:', err)
     } finally {
@@ -63,7 +64,7 @@ export default function VendorOrders({ user }) {
     }
   }
 
-async function updateStatus(orderId, status) {
+  async function updateStatus(orderId, status) {
     setActing(orderId)
     try {
       await axios.patch(`${API}/orders/${orderId}/status`,
@@ -76,9 +77,8 @@ async function updateStatus(orderId, status) {
       setActing(null)
     }
   }
-  
 
-  const filters = ['pending', 'accepted', 'packing', 'out_for_delivery', 'delivered']
+  const filters = ['pending', 'confirmed', 'packing', 'out_for_delivery', 'delivered']
   const filtered = orders.filter(o => o.status === filter)
 
   return (
@@ -137,7 +137,7 @@ async function updateStatus(orderId, status) {
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
             <div style={{ fontSize: 40, marginBottom: 10 }}>📭</div>
-            <div style={{ color: C.muted }}>No {filter} orders</div>
+            <div style={{ color: C.muted }}>No {filter.replace('_', ' ')} orders</div>
           </div>
         ) : (
           filtered.map(order => (
@@ -227,7 +227,7 @@ async function updateStatus(orderId, status) {
                     </button>
                   </>
                 )}
-                {order.status === 'accepted' && (
+                {order.status === 'confirmed' && (
                   <button
                     onClick={() => updateStatus(order.id, 'packing')}
                     disabled={acting === order.id}
