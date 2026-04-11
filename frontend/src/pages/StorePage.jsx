@@ -4,10 +4,9 @@ import axios from 'axios'
 
 const API = import.meta.env.VITE_API_URL
 const C = {
-  primary: '#FF5A1F', bg: '#F5F5F0',
-  white: '#FFFFFF', text: '#1C1C14',
-  muted: '#6B6B60', border: '#E8E8E0',
-  green: '#16A34A'
+  primary: '#0c8a3f', primaryLight: '#e8f5e9',
+  bg: '#f5f5f0', white: '#FFFFFF',
+  text: '#111111', muted: '#777777', border: '#e8e8e8'
 }
 
 export default function StorePage({ user }) {
@@ -55,10 +54,7 @@ export default function StorePage({ user }) {
   function addToCart(product) {
     setCart(prev => ({
       ...prev,
-      [product.id]: {
-        ...product,
-        qty: (prev[product.id]?.qty || 0) + 1
-      }
+      [product.id]: { ...product, qty: (prev[product.id]?.qty || 0) + 1 }
     }))
   }
 
@@ -95,117 +91,132 @@ export default function StorePage({ user }) {
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, paddingBottom: 100 }}>
+    <div style={{ minHeight: '100vh', background: C.bg, paddingBottom: 100, fontFamily: "'Outfit', sans-serif" }}>
 
       {/* Header */}
-      <div style={{ background: C.primary, padding: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-          <button onClick={() => navigate('/')} style={{
-            background: 'rgba(255,255,255,0.2)', border: 'none',
-            borderRadius: 8, padding: '6px 10px',
-            color: 'white', fontSize: 16
-          }}>←</button>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: 'white' }}>
-              {vendor?.shop_name}
-            </div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>
-              {vendor?.area} · Min ₹{vendor?.min_order_amt}
-            </div>
-          </div>
+      <div style={{ background: C.primary, padding: '14px 14px 16px' }}>
+        <button onClick={() => navigate('/')} style={{
+          width: 30, height: 30, borderRadius: '50%',
+          background: 'rgba(255,255,255,0.2)', border: 'none',
+          color: 'white', fontSize: 14, marginBottom: 10,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer'
+        }}>←</button>
+        <div style={{ fontSize: 19, fontWeight: 900, color: 'white' }}>
+          {vendor?.shop_name}
+        </div>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>
+          {vendor?.area} · Pincode {vendor?.pincode || '411018'}
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+          {[
+            `⭐ ${vendor?.rating || '4.5'}`,
+            `🕐 20–30 min`,
+            `🛵 ₹${vendor?.delivery_fee || 8}`
+          ].map(pill => (
+            <div key={pill} style={{
+              background: 'rgba(255,255,255,0.2)',
+              borderRadius: 20, padding: '4px 10px',
+              fontSize: 10, fontWeight: 600, color: 'white'
+            }}>{pill}</div>
+          ))}
         </div>
       </div>
 
-      {/* Category Filter */}
+      {/* Category filter pills */}
       <div style={{
-        display: 'flex', gap: 8, padding: '12px 16px',
+        display: 'flex', gap: 8, padding: '12px 14px',
         overflowX: 'auto', background: C.white,
         borderBottom: `1px solid ${C.border}`
       }}>
-        <button
-          onClick={() => setSelectedCat(null)}
-          style={{
-            flexShrink: 0, padding: '6px 14px',
-            borderRadius: 20, border: 'none',
-            background: !selectedCat ? C.primary : C.bg,
-            color: !selectedCat ? 'white' : C.muted,
-            fontSize: 12, fontWeight: 600
-          }}>All</button>
-        {categories.map(cat => (
-          <button key={cat.id}
+        {[{ id: null, name: 'All', emoji: '' }, ...categories].map(cat => (
+          <button key={cat.id ?? 'all'}
             onClick={() => setSelectedCat(cat.id)}
             style={{
               flexShrink: 0, padding: '6px 14px',
-              borderRadius: 20, border: 'none',
-              background: selectedCat === cat.id ? C.primary : C.bg,
-              color: selectedCat === cat.id ? 'white' : C.muted,
-              fontSize: 12, fontWeight: 600
+              borderRadius: 20, fontSize: 11, fontWeight: 600,
+              border: `1.5px solid ${selectedCat === cat.id ? C.primary : C.border}`,
+              background: selectedCat === cat.id ? C.primary : C.white,
+              color: selectedCat === cat.id ? 'white' : '#555',
+              cursor: 'pointer'
             }}>
             {cat.emoji} {cat.name}
           </button>
         ))}
       </div>
 
-      {/* Products */}
-      <div style={{ padding: '16px' }}>
+      {/* Products grid */}
+      <div style={{ padding: '14px' }}>
         {filteredProducts.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40, color: C.muted }}>
             No products in this category
           </div>
         ) : (
-          filteredProducts.map(product => (
-            <div key={product.id} style={{
-              background: C.white, borderRadius: 12,
-              padding: '12px 14px', marginBottom: 8,
-              display: 'flex', alignItems: 'center', gap: 12,
-              boxShadow: '0 1px 4px rgba(0,0,0,0.05)'
-            }}>
-              <div style={{ fontSize: 32 }}>{product.emoji || '📦'}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>
-                  {product.name}
-                </div>
-                <div style={{ fontSize: 12, color: C.muted }}>
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10
+          }}>
+            {filteredProducts.map(product => (
+              <div key={product.id} style={{
+                background: C.white, borderRadius: 14,
+                padding: '10px', border: `1px solid ${C.border}`,
+                position: 'relative'
+              }}>
+                <div style={{
+                  width: '100%', height: 80,
+                  background: '#f8f8f8', borderRadius: 10,
+                  display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', fontSize: 32,
+                  marginBottom: 8
+                }}>{product.emoji || '📦'}</div>
+
+                <div style={{ fontSize: 10, color: C.muted, marginBottom: 2 }}>
                   {product.unit}
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: C.primary, marginTop: 2 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.text, lineHeight: 1.3, marginBottom: 4 }}>
+                  {product.name}
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 900, color: C.primary }}>
                   ₹{product.price}
                 </div>
-              </div>
 
-              {/* Add to cart controls */}
-              {cart[product.id] ? (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  background: '#FFF0EA', borderRadius: 8, padding: '4px 8px'
-                }}>
-                  <button onClick={() => removeFromCart(product.id)} style={{
-                    width: 24, height: 24, borderRadius: 6,
-                    border: 'none', background: C.primary,
-                    color: 'white', fontSize: 16, fontWeight: 700
-                  }}>−</button>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: C.primary, minWidth: 20, textAlign: 'center' }}>
-                    {cart[product.id].qty}
-                  </span>
+                {cart[product.id] ? (
+                  <div style={{
+                    position: 'absolute', bottom: 10, right: 10,
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    background: C.primaryLight, borderRadius: 8, padding: '4px 8px'
+                  }}>
+                    <button onClick={() => removeFromCart(product.id)} style={{
+                      width: 22, height: 22, borderRadius: 6,
+                      border: 'none', background: C.primary,
+                      color: 'white', fontSize: 14, fontWeight: 700,
+                      cursor: 'pointer', lineHeight: 1
+                    }}>−</button>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: C.primary, minWidth: 16, textAlign: 'center' }}>
+                      {cart[product.id].qty}
+                    </span>
+                    <button onClick={() => addToCart(product)} style={{
+                      width: 22, height: 22, borderRadius: 6,
+                      border: 'none', background: C.primary,
+                      color: 'white', fontSize: 14, fontWeight: 700,
+                      cursor: 'pointer', lineHeight: 1
+                    }}>+</button>
+                  </div>
+                ) : (
                   <button onClick={() => addToCart(product)} style={{
-                    width: 24, height: 24, borderRadius: 6,
+                    position: 'absolute', bottom: 10, right: 10,
+                    width: 28, height: 28, borderRadius: 8,
                     border: 'none', background: C.primary,
-                    color: 'white', fontSize: 16, fontWeight: 700
+                    color: 'white', fontSize: 18, fontWeight: 700,
+                    cursor: 'pointer', lineHeight: 1
                   }}>+</button>
-                </div>
-              ) : (
-                <button onClick={() => addToCart(product)} style={{
-                  width: 32, height: 32, borderRadius: 8,
-                  border: 'none', background: C.primary,
-                  color: 'white', fontSize: 20, fontWeight: 700
-                }}>+</button>
-              )}
-            </div>
-          ))
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
-      {/* Cart Bar */}
+      {/* Cart bar */}
       {cartCount > 0 && (
         <div style={{
           position: 'fixed', bottom: 0, left: '50%',
@@ -215,14 +226,15 @@ export default function StorePage({ user }) {
         }}>
           <button onClick={goToCart} style={{
             width: '100%', background: C.primary,
-            border: 'none', borderRadius: 12,
+            border: 'none', borderRadius: 14,
             padding: '14px 20px', color: 'white',
             display: 'flex', justifyContent: 'space-between',
-            alignItems: 'center', fontSize: 14, fontWeight: 800
+            alignItems: 'center', fontSize: 14, fontWeight: 800,
+            cursor: 'pointer'
           }}>
             <span style={{
               background: 'rgba(255,255,255,0.2)',
-              borderRadius: 6, padding: '2px 8px'
+              borderRadius: 6, padding: '2px 8px', fontSize: 13
             }}>{cartCount} items</span>
             <span>View Cart →</span>
             <span>₹{cartTotal.toFixed(2)}</span>

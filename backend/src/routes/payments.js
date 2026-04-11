@@ -11,6 +11,8 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
+console.log('KEY CHECK:', 'ID starts with:', process.env.RAZORPAY_KEY_ID?.substring(0, 20), 'Secret length:', process.env.RAZORPAY_KEY_SECRET?.length);
+
 console.log('KEY CHECK:', {
   key_id_length: process.env.RAZORPAY_KEY_ID?.length,
   secret_length: process.env.RAZORPAY_KEY_SECRET?.length,
