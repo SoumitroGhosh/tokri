@@ -191,7 +191,7 @@ router.patch('/:id/accept', authenticate, requireRole('vendor'), async (req, res
 
     const { data } = await supabase
       .from('orders')
-      .update({ status: 'accepted', accepted_at: new Date() })
+      .update({ status: 'confirmed', accepted_at: new Date() })
       .eq('id', req.params.id)
       .select()
       .single();
@@ -237,38 +237,37 @@ router.patch('/:id/status', authenticate, requireRole('vendor'), async (req, res
   try {
     const { status } = req.body;
 
-        const validTransitions = {
-          accepted: 'packing',
-          packing: 'out_for_delivery',
-          out_for_delivery: 'delivered'
-        };
-    
-        // Add the rest of your PATCH handler logic here, for example:
-        const { data: order } = await supabase
-          .from('orders')
-          .select('vendor_id, status')
-          .eq('id', req.params.id)
-          .single();
-    
-        if (!order) {
-          return res.status(404).json({ error: 'Order not found.' });
-        }
-        if (order.vendor_id !== req.user.id) {
-          return res.status(403).json({ error: 'Not your order.' });
-        }
-        if (!validTransitions[order.status] || validTransitions[order.status] !== status) {
-          return res.status(400).json({ error: 'Invalid status transition.' });
-        }
-    
-        await supabase
-          .from('orders')
-          .update({ status, delivered_at: status === 'delivered' ? new Date() : null })
-          .eq('id', req.params.id);
-    
-        res.json({ success: true });
-      } catch (err) {
-        res.status(500).json({ error: 'Failed to update order status.' });
-      }
-    });
+    const validTransitions = {
+      confirmed: 'packing',
+      packing: 'out_for_delivery',
+      out_for_delivery: 'delivered'
+    };
 
-    module.exports = router;
+    const { data: order } = await supabase
+      .from('orders')
+      .select('vendor_id, status')
+      .eq('id', req.params.id)
+      .single();
+
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found.' });
+    }
+    if (order.vendor_id !== req.user.id) {
+      return res.status(403).json({ error: 'Not your order.' });
+    }
+    if (!validTransitions[order.status] || validTransitions[order.status] !== status) {
+      return res.status(400).json({ error: 'Invalid status transition.' });
+    }
+
+    await supabase
+      .from('orders')
+      .update({ status, delivered_at: status === 'delivered' ? new Date() : null })
+      .eq('id', req.params.id);
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update order status.' });
+  }
+});
+
+module.exports = router;
