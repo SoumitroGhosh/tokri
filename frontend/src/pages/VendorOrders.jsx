@@ -49,7 +49,7 @@ export default function VendorOrders({ user }) {
       setActing(null)
     }
   }
-  
+
   async function rejectOrder(orderId) {
     setActing(orderId)
     try {
@@ -63,18 +63,20 @@ export default function VendorOrders({ user }) {
     }
   }
 
-  async function updateStatus(orderId, status) {
+async function updateStatus(orderId, status) {
     setActing(orderId)
     try {
       await axios.patch(`${API}/orders/${orderId}/status`,
         { status }, { headers })
       fetchOrders()
+      setFilter(status)
     } catch (err) {
       console.error('Failed to update status:', err)
     } finally {
       setActing(null)
     }
   }
+  
 
   const filters = ['pending', 'accepted', 'packing', 'out_for_delivery', 'delivered']
   const filtered = orders.filter(o => o.status === filter)
